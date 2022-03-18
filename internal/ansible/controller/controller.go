@@ -58,7 +58,7 @@ type Options struct {
 // Add - Creates a new ansible operator controller and adds it to the manager
 func Add(mgr manager.Manager, options Options) *controller.Controller {
 	log.Info("Watching resource", "Options.Group", options.GVK.Group, "Options.Version",
-		options.GVK.Version, "Options.Kind", options.GVK.Kind)
+		options.GVK.Version, "Options.Kind", options.GVK.Kind, "Options.WatchAnnotationsChanges", options.WatchAnnotationsChanges)
 	if options.EventHandlers == nil {
 		options.EventHandlers = []events.EventHandler{}
 	}

@@ -95,13 +95,22 @@ build/scorecard-test build/scorecard-test-kuttl build/custom-scorecard-tests:
 IMAGE_TARGET_LIST = operator-sdk helm-operator ansible-operator ansible-operator-2.11-preview scorecard-test scorecard-test-kuttl scorecard-untar scorecard-storage
 image-build: $(foreach i,$(IMAGE_TARGET_LIST),image/$(i)) ## Build all images.
 
+.PHONY: image-build-multiarch
+IMAGE_TARGET_LIST = operator-sdk helm-operator ansible-operator ansible-operator-2.11-preview scorecard-test scorecard-test-kuttl scorecard-untar scorecard-storage
+image-build-multiarch: $(foreach i,$(IMAGE_TARGET_LIST),image-multiarch/$(i)) ## Build all images.
+
+
 # Convenience wrapper for building dependency base images.
 .PHONY: image-build-base
 IMAGE_BASE_TARGET_LIST = ansible-operator ansible-operator-2.11-preview
 image-build-base: $(foreach i,$(IMAGE_BASE_TARGET_LIST),image-base/$(i)) ## Build all images.
 
+.PHONY: image-build-base-multiarch
+IMAGE_BASE_TARGET_LIST = ansible-operator ansible-operator-2.11-preview
+image-build-base-multiarch: $(foreach i,$(IMAGE_BASE_TARGET_LIST),image-base-multiarch/$(i)) ## Build all images.
+
 # Build an image.
-BUILD_IMAGE_REPO = quay.io/operator-framework
+BUILD_IMAGE_REPO = registry.gitlab.element.io/engineering/infrastructure/runtime/operator-sdk
 # When running in a terminal, this will be false. If true (ex. CI), print plain progress.
 ifneq ($(shell test -t 0; echo $$?),0)
 DOCKER_PROGRESS = --progress plain
@@ -113,6 +122,15 @@ image/%:
 image-base/%: export DOCKER_CLI_EXPERIMENTAL = enabled
 image-base/%:
 	docker buildx build $(DOCKER_PROGRESS) -t $(BUILD_IMAGE_REPO)/$*-base:dev -f ./images/$*/base.Dockerfile --load images/$*
+
+image-multiarch/%: export DOCKER_CLI_EXPERIMENTAL = enabled
+image-multiarch/%:
+	docker buildx build --platform linux/amd64,linux/arm64 $(DOCKER_PROGRESS) -t $(BUILD_IMAGE_REPO)/$*:dev -f ./images/$*/Dockerfile --push .
+
+image-base-multiarch/%: export DOCKER_CLI_EXPERIMENTAL = enabled
+image-base-multiarch/%:
+	docker buildx build --platform linux/amd64,linux/arm64 $(DOCKER_PROGRESS) -t $(BUILD_IMAGE_REPO)/$*-base:dev -f ./images/$*/base.Dockerfile --push images/$*
+
 ##@ Release
 
 .PHONY: release
